@@ -2,7 +2,7 @@
   "name": "don-confiado-client",
   "private": true,
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.7.20",
+    "@whiskeysockets/baileys": "^6.7.21",
     "qrcode": "^1.5.4",
     "tsx": "^4.19.4"
   },
