@@ -13,7 +13,7 @@ import {
 
 
 //import makeWASocket, { downloadMediaMessage } from "@whiskeysockets/baileys"
-import {createWriteStream, readFileSync} from "fs";
+import { createWriteStream, readFileSync } from "fs";
 
 
 import { rmSync, existsSync } from "fs";
@@ -45,8 +45,8 @@ class WhatsAppHandler {
     const { version } = await fetchLatestBaileysVersion();
 
     this.sock = makeWASocket({
-      version,                      
-      printQRInTerminal: false,    
+      version,
+      printQRInTerminal: false,
       auth: this.authState,
       browser: ["Ubuntu", "Chrome", "22.04.4"],
       syncFullHistory: false,
@@ -56,11 +56,11 @@ class WhatsAppHandler {
     this.sock.ev.on("connection.update", this.onConnectionUpdate.bind(this));
   }
 
-  async initSaveCredentials() {}
+  async initSaveCredentials() { }
 
   constructor() {
     // Bind methods to this instance
-    this.saveCreds = async () => {};
+    this.saveCreds = async () => { };
     this.onCredsUpdate = this.onCredsUpdate.bind(this);
     this.onMessagesUpsert = this.onMessagesUpsert.bind(this);
     this.onConnectionUpdate = this.onConnectionUpdate.bind(this);
@@ -77,7 +77,7 @@ class WhatsAppHandler {
   }
 
   // Helper function to download and save media files
-   downloadAndSaveMedia = (stream: any, filepath: string): Promise<void> => {
+  downloadAndSaveMedia = (stream: any, filepath: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const writeStream = createWriteStream(filepath);
       stream.pipe(writeStream);
@@ -101,10 +101,10 @@ class WhatsAppHandler {
     for (const msg of message_array.messages) {
       console.log("Mensaje recibido:\n", msg);
       if (msg.key.fromMe) {
-        console.log("\tIgnorando mensaje enviado por el propio cliente:",msg.key.remoteJid);
+        console.log("\tIgnorando mensaje enviado por el propio cliente:", msg.key.remoteJid);
         continue; // Ignorar mensajes enviados por el propio cliente
       }
-      
+
       try {
         //----------------------------------------------------------
         // PROCESAR MENSAJE 
@@ -114,25 +114,25 @@ class WhatsAppHandler {
 
           const messageType = getContentType(msg.message);
           console.log("Tipo de mensaje:", messageType);
-          let  mime_type = "";
+          let mime_type = "";
           let filename = "";
           let img_caption = "";
-          
+
           if (messageType === 'imageMessage') {
             mime_type = msg.message.imageMessage.mimetype;
             filename = join(tmpdir(), "downloaded-image." + mime_type.split('/')[1]);
-             
+
             // download the media as a stream
             const stream = await downloadMediaMessage(
-                msg,
-                'stream',
-                {},
-                {
-                    logger: P({ level: "silent" }),
-                    reuploadRequest: this.sock.updateMediaMessage
-                }
+              msg,
+              'stream',
+              {},
+              {
+                logger: P({ level: "silent" }),
+                reuploadRequest: this.sock.updateMediaMessage
+              }
             );
-    
+
             // save the image file locally and wait for it to finish
             await this.downloadAndSaveMedia(stream, filename);
           }
@@ -145,11 +145,11 @@ class WhatsAppHandler {
               'stream',
               {},
               {
-                  logger: P({ level: "silent" }),
-                  reuploadRequest: this.sock.updateMediaMessage
+                logger: P({ level: "silent" }),
+                reuploadRequest: this.sock.updateMediaMessage
               }
             );
-  
+
             // save the audio file locally and wait for it to finish
             await this.downloadAndSaveMedia(stream, filename);
           }
@@ -157,16 +157,16 @@ class WhatsAppHandler {
           console.log(
             "Contenido del mensaje:",
             msg.message.conversation ||
-              msg.message.extendedTextMessage?.text ||
-              "No texto disponible"
+            msg.message.extendedTextMessage?.text ||
+            "No texto disponible"
           );
 
           this.sock.readMessages([msg.key]);
 
           const message = msg.message.imageMessage?.caption ||
-                          msg.message.conversation ||
-                          msg.message.extendedTextMessage?.text ||
-                          "No texto disponible";
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text ||
+            "No texto disponible";
 
 
           const params = new URLSearchParams({
@@ -175,18 +175,15 @@ class WhatsAppHandler {
             top_k: "5",
             use_graphrag: "true"
           });
-          
-          fetch(`http://127.0.0.1:8000/api/graphrag/enhanced/ask?${params}`, {
+
+          fetch(`http://127.0.0.1:8000/api/chat_v2.0`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            
+
             body: JSON.stringify({
-              message: message,
-              retrieval_method: "hybrid",
-              top_k: "5",
-              use_graphrag: "true",
+              message: message,              
               user_id: msg.key.remoteJid,
               mime_type: mime_type,
               file_base64: mime_type ? fileToBase64(filename) : null
