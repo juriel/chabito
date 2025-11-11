@@ -9,6 +9,12 @@ from fastapi_utils.cbv import cbv
 from .dto.message_dto import ChatRequestDTO
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage, SystemMessage , AIMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import ConfigurableField
+from langchain_core.tools import tool
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+
+
 
 CHABITO_SYSTEM_PROMPT = """
 
@@ -77,7 +83,7 @@ class ChatWebService:
             Dict with chat response, detected intention, and saved entities
         """
         # Initialize LLM
-        llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", api_key=self.GOOGLE_API_KEY)
+        llm = init_chat_model("gemini-2.5-flash", model_provider="google_genai", api_key=self.GOOGLE_API_KEY)
         
         print("=========REQUEST=========")
         print(request)
@@ -86,9 +92,21 @@ class ChatWebService:
         
         # Get or create conversation
         conversation = self.find_conversation(request.user_id)
-        user_input = request.message
 
-        return {"answer": "Funcionalidad en desarrollo."}
+        conversation.append(HumanMessage(content=request.message))
+        tools = []
+        prompt = prompt = ChatPromptTemplate.from_messages( 
+            [ ("system", CHABITO_SYSTEM_PROMPT), ("placeholder", "{chat_history}"), ("human", "{input}"), ("placeholder", "{agent_scratchpad}"), ] )
+        agent = create_tool_calling_agent(llm, tools,prompt=prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+        response = agent_executor.invoke({"input":request.message, "chat_conversation":conversation})
+        response_dto = {"answer": response["output"]}
+        print("=========RESPONSE=========")
+        print(response_dto)
+
+
+
+        return response_dto
         
         
 
