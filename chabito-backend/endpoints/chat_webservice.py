@@ -29,14 +29,16 @@ class ChatWebService:
     Handles multimodal conversations (text, audio, images) with intention detection
     and automatic data extraction from invoices and user inputs.
     """
+
+    _conversations = {}
     
     def __init__(self):
         """Initialize the chat service with environment variables and conversation storage."""
-        
+        print("*******************INITIALIZING CHAT WEB SERVICE**************")
         self.GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-        self._conversations = {}
+        #self._conversations = {}
         self.gemini_model = init_chat_model("gemini-2.0-flash", model_provider="google_genai",  api_key=self.GOOGLE_API_KEY)
-        print("GEMINI_MODEL IS ",type(self.GOOGLE_API_KEY))
+        print("GOOGLE_API_KEY IS ",type(self.GOOGLE_API_KEY))
 
     # =============================================================================
     # CONVERSATION MANAGEMENT UTILITIES
@@ -53,13 +55,15 @@ class ChatWebService:
             List of messages for the conversation
         """
 
-
         global CHABITO_SYSTEM_PROMPT
+        print("LOOKING FOR CONVERSATION ID:", conversation_id)
+        for key in self._conversations.keys():
+            print("EXISTING CONVERSATION KEY:", key)
         if conversation_id in self._conversations.keys():
             return self._conversations[conversation_id]
         else:
             conversation = []
-            conversation.append(SystemMessage(content=CHABITO_SYSTEM_PROMPT))
+            #conversation.append(SystemMessage(content=CHABITO_SYSTEM_PROMPT))
             self._conversations[conversation_id] = conversation
             return conversation 
 
@@ -91,20 +95,27 @@ class ChatWebService:
         
         
         # Get or create conversation
+        print("FINDING CONVERSATION FOR USER ID:", request.user_id)
         conversation = self.find_conversation(request.user_id)
 
-        conversation.append(HumanMessage(content=request.message))
+
+        print("=========CONVERSATION=========")
+        for c in conversation:
+            print(c)
+        print("=============================")
+        
         tools = []
         prompt = prompt = ChatPromptTemplate.from_messages( 
             [ ("system", CHABITO_SYSTEM_PROMPT), ("placeholder", "{chat_history}"), ("human", "{input}"), ("placeholder", "{agent_scratchpad}"), ] )
         agent = create_tool_calling_agent(llm, tools,prompt=prompt)
         agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-        response = agent_executor.invoke({"input":request.message, "chat_conversation":conversation})
+        response = agent_executor.invoke({"input":request.message, "chat_history":conversation})
         response_dto = {"answer": response["output"]}
         print("=========RESPONSE=========")
         print(response_dto)
 
-
+        conversation.append(HumanMessage(content=request.message))
+        conversation.append(AIMessage(content=response["output"]))
 
         return response_dto
         
