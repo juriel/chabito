@@ -24,10 +24,7 @@ chat_webservice_api_router = APIRouter()
 @cbv(chat_webservice_api_router)
 class ChatWebService:
     """
-    Chat service for Don Confiado AI assistant.
-    
-    Handles multimodal conversations (text, audio, images) with intention detection
-    and automatic data extraction from invoices and user inputs.
+
     """
 
     _conversations = {}
