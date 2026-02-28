@@ -1,5 +1,5 @@
 {
-  "name": "don-confiado-client",
+  "name": "chabito-client",
   "private": true,
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.21",

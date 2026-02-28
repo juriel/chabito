@@ -19,6 +19,8 @@ import {createWriteStream, readFileSync} from "fs";
 import { rmSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
+import { InputMessageDTO } from "./dto/input_message_dto";
+import { BackendWebSocketClient } from "./services/backend_websocket_client";
 
 
 function fileToBase64(path: string): string {
@@ -31,6 +33,7 @@ class WhatsAppHandler {
   private sock!: WASocket;
   private qrAttempts = 0;
   private readonly maxQrAttempts = 3;
+  private readonly backendClient: BackendWebSocketClient;
   private saveCreds: () => Promise<void> | null;
   //private readonly restartSock: () => Promise<void>;
   private authState: AuthenticationState | undefined;
@@ -54,12 +57,19 @@ class WhatsAppHandler {
     this.sock.ev.on("creds.update", this.onCredsUpdate.bind(this));
     this.sock.ev.on("messages.upsert", this.onMessagesUpsert.bind(this));
     this.sock.ev.on("connection.update", this.onConnectionUpdate.bind(this));
+
+    try {
+      await this.backendClient.connect();
+    } catch (error) {
+      console.error("⚠️ Could not connect backend websocket on startup:", error);
+    }
   }
 
   async initSaveCredentials() {}
 
   constructor() {
     // Bind methods to this instance
+    this.backendClient = BackendWebSocketClient.getInstance();
     this.saveCreds = async () => {};
     this.onCredsUpdate = this.onCredsUpdate.bind(this);
     this.onMessagesUpsert = this.onMessagesUpsert.bind(this);
@@ -169,37 +179,25 @@ class WhatsAppHandler {
                           "No texto disponible";
 
 
-          const params = new URLSearchParams({
-            query: message,
-            retrieval_method: "hybrid",
-            top_k: "5",
-            use_graphrag: "true"
+          const inputMessage: InputMessageDTO = {
+            message: message,
+            user_id: msg.key.remoteJid,
+            sender_nickname: msg.pushName || null,
+            sender_jid: msg.key.participant || msg.key.remoteJid || null,
+            mime_type: mime_type || null,
+            file_base64: mime_type ? fileToBase64(filename) : null
+          };
+
+          const response: any = await this.backendClient.sendInputMessage(inputMessage);
+          console.log("Backend websocket response:", response);
+
+          this.sock.sendMessage(msg.key.remoteJid, {
+            text:
+              response?.answer ||
+              response?.reply ||
+              response?.payload?.message ||
+              "⚠️ No pude entender tu mensaje - juriel",
           });
-          
-          fetch(`http://127.0.0.1:8000/api/chat_v2.0`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            
-
-            body: JSON.stringify({
-              message: message,
-              user_id: msg.key.remoteJid,
-              mime_type: mime_type,
-              file_base64: mime_type ? fileToBase64(filename) : null
-            }),
-            redirect: "follow",
-          })
-            .then((response) => response.json())
-            .then((response: any) => {
-              console.log("API response:", response);
-
-              this.sock.sendMessage(msg.key.remoteJid, {
-                text: response.answer || response.reply || "⚠️ No pude entender tu mensaje - juriel",
-              });
-            })
-            .catch((error) => console.error(error));
         }
       } catch (error) {
         console.log(error);
