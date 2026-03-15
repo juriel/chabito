@@ -12,7 +12,7 @@ Servicio backend con endpoints de chat, RAG (productos/proveedores) y utilidades
 
 1) Ubícate en esta carpeta
 ```bash
-cd projects/python/don-confiado-backend/app
+cd chabito-backend
 ```
 
 2) Crea y activa un entorno virtual
@@ -45,7 +45,7 @@ SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
 
 ## Ejecutar el servidor
 ```bash
-python tribu-main.py
+python chabito-main.py
 # http://127.0.0.1:8000
 ```
 

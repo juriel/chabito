@@ -1,6 +1,8 @@
-WhatsApp QR service + Simple Chat CLI
+# Chabito - WhatsApp QR Service
 
-Install
+Servicio de conexión a WhatsApp vía QR y cliente de chat por CLI. Este servicio permite integrar WhatsApp con el backend de Chabito.
+
+## Instalación
 
 ```bash
 yarn
