@@ -1,6 +1,6 @@
 # chabito-backend-2
 
-Python WebSocket echo server with FastAPI + Uvicorn.
+Python WebSocket server (FastAPI + Uvicorn) que valida `InputMessageDTO` y responde usando un agente LangChain con memoria por `user_id`.
 
 ## Install
 
@@ -14,8 +14,15 @@ pip install -r requirements.txt
 ## Run
 
 ```bash
-uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
+uvicorn chabito_back.webserver.webserver_main:webserver --host 127.0.0.1 --port 8001 --reload
 ```
+
+## Env
+
+- `GOOGLE_API_KEY` (requerida)
+- `CHABITO_MODEL` (opcional, default: `gemini-2.0-flash`)
+- `CHABITO_VERBOSE` (opcional, `1` para logs verbose)
+- `CHABITO_SYSTEM_PROMPT` (opcional)
 
 ## Endpoints
 
@@ -37,3 +44,16 @@ uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
 
 The server validates the payload and echoes it back in JSON.
 
+## Response shape
+
+El servidor responde JSON con `answer`:
+
+```json
+{ "type": "chat", "answer": "..." }
+```
+
+En caso de error del agente:
+
+```json
+{ "error": "agent_error", "detail": "...", "payload": { "message": "...", "user_id": "..." } }
+```

@@ -1,4 +1,7 @@
 fastapi[all]
 uvicorn
 pydantic
-
+python-dotenv
+langchain>=0.2.0,<0.4
+langchain-core>=0.2.0,<0.4
+langchain-google-genai>=1.0.0,<3
